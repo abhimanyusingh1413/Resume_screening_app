@@ -7,15 +7,26 @@
 
 import streamlit as st
 import pickle
-import docx  # Extract text from Word file
+# import docx  # Extract text from Word file
+try:
+    import docx
+except:
+    docx = None
 import PyPDF2  # Extract text from PDF
 import re
 
-# Load pre-trained model and TF-IDF vectorizer (ensure these are saved earlier)
-svc_model = pickle.load(open('clf.pkl', 'rb'))  # Example file name, adjust as needed
-tfidf = pickle.load(open('tfidf.pkl', 'rb'))  # Example file name, adjust as needed
-le = pickle.load(open('encoder.pkl', 'rb'))  # Example file name, adjust as needed
-
+# # Load pre-trained model and TF-IDF vectorizer (ensure these are saved earlier)
+# svc_model = pickle.load(open('clf.pkl', 'rb'))  # Example file name, adjust as needed
+# tfidf = pickle.load(open('tfidf.pkl', 'rb'))  # Example file name, adjust as needed
+# le = pickle.load(open('encoder.pkl', 'rb'))  # Example file name, adjust as needed
+try:
+    svc_model = pickle.load(open('clf.pkl', 'rb'))
+    tfidf = pickle.load(open('tfidf.pkl', 'rb'))
+    le = pickle.load(open('encoder.pkl', 'rb'))
+except:
+    svc_model = None
+    tfidf = None
+    le = None
 
 # Function to clean resume text
 def cleanResume(txt):
@@ -39,7 +50,16 @@ def extract_text_from_pdf(file):
 
 
 # Function to extract text from DOCX
+# def extract_text_from_docx(file):
+#     doc = docx.Document(file)
+#     text = ''
+#     for paragraph in doc.paragraphs:
+#         text += paragraph.text + '\n'
+#     return text
 def extract_text_from_docx(file):
+    if docx is None:
+        raise Exception("DOCX not supported. Please upload PDF or TXT file.")
+        
     doc = docx.Document(file)
     text = ''
     for paragraph in doc.paragraphs:
@@ -73,7 +93,7 @@ def handle_file_upload(uploaded_file):
 
 
 # Function to predict the category of a resume
-def pred(input_resume):
+# def pred(input_resume):
     # Preprocess the input text (e.g., cleaning, etc.)
     cleaned_text = cleanResume(input_resume)
 
@@ -90,7 +110,24 @@ def pred(input_resume):
     predicted_category_name = le.inverse_transform(predicted_category)
 
     return predicted_category_name[0]  # Return the category name
+def pred(input_resume):
+    
+    if svc_model is None or tfidf is None or le is None:
+        return "Model not available"
 
+    # Preprocess the input text
+    cleaned_text = cleanResume(input_resume)
+
+    # Vectorize
+    vectorized_text = tfidf.transform([cleaned_text]).toarray()
+
+    # Prediction
+    predicted_category = svc_model.predict(vectorized_text)
+
+    # Convert label to category name
+    predicted_category_name = le.inverse_transform(predicted_category)
+
+    return predicted_category_name[0]
 
 # Streamlit app layout
 def main():
