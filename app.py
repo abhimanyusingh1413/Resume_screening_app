@@ -12,7 +12,11 @@ try:
     import docx
 except:
     docx = None
-import PyPDF2  # Extract text from PDF
+# import PyPDF2  # Extract text from PDF
+try:
+    import PyPDF2
+except:
+    PyPDF2 = None
 import re
 
 # # Load pre-trained model and TF-IDF vectorizer (ensure these are saved earlier)
